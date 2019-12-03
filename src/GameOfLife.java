@@ -1,58 +1,84 @@
+/**
+ * CONWAY'S GAME OF LIFE COPYCAT
+ * @author Serena He
+ * ----------------------------------------------------------------------------------
+ * Main class for GameOfLife-Copycat.
+ * Begins a GameOfLife game
+ */
 
-import java.awt.GraphicsConfiguration;
-import java.awt.GridLayout;
-import javax.swing.JLabel;
-import javax.swing.JFrame;
+import java.awt.*;
+import javax.swing.*;
 
-public class GameOfLife extends JFrame {
-    final int FRAME_WIDTH=500;
-    final int FRAME_HEIGHT=400;
+public class GameOfLife {
 
-    final int DEFAULT_ROWS=10;
-    final int DEFAULT_COLS=10;
+    // -----GUI-----
+    // Dimensions
+    static final Dimension SCREEN_DIM = Toolkit.getDefaultToolkit().getScreenSize();
+    static final int GAME_WIDTH = (int)(SCREEN_DIM.getWidth()/2.5);
+    static final int GAME_HEIGHT = (int)(GAME_WIDTH*0.8); // 5:4 ratio
+    static final Dimension GAME_DIMENSION = new Dimension(GAME_WIDTH, GAME_HEIGHT);
+    static final Dimension GRID_DIMENSION = new Dimension(GAME_HEIGHT, GAME_HEIGHT);
+    static final int MENU_WIDTH = (int)(GAME_WIDTH*0.2);
+    static final Dimension MENU_DIMENSION = new Dimension(MENU_WIDTH, GAME_HEIGHT);
+    // Frame
+    private JFrame gameFrame = new JFrame("Conway's Game of Life - Copycat");
+    // Panels
+    private JPanel gridPanel = new JPanel();
+    private JPanel menuPanel = new JPanel();
 
-    private int rows;
-    private int cols;
-    private int[][] grid;
+    // -----GAME-----
+    static final int ROWS = 30;
+    static final int COLS = 30;
+    LifeCell[][] lifeGrid;
 
-    public GameOfLife(String title) {
-        // Constructor
-        // Frame
-        super(title);
-        this.setSize(FRAME_WIDTH, FRAME_HEIGHT);
-        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.setLayout(new GridLayout());
-
-        // Label
-        JLabel testLabel = new JLabel("Hello World");
-        this.add(testLabel);
-
-        // Game
-        this.rows = DEFAULT_ROWS;
-        this.cols = DEFAULT_COLS;
-        grid = new int[rows][cols];
-
-    }
-
-    public void printGrid() {
-        // Print game grid
-        for(int row=0; row < rows; row++) {
-            System.out.print("|");
-            for(int col=0; col < cols; col++) {
-                System.out.print(" 0 |");
+    public GameOfLife() {
+        /**
+         * Constructor for a new Game of Life
+         */
+        // Add life cells to grid
+        lifeGrid = new LifeCell[ROWS][COLS];
+        for (int row=0; row < ROWS; row++) {
+            for (int col=0; col < COLS; col++) {
+                LifeCell cell = new LifeCell();
+                lifeGrid[row][col] = cell;
             }
-            System.out.println();
         }
+
+        startGame();
     }
 
-    public void showGame() {
-        this.setVisible(true);
+    private void startGame() {
+        /**
+         * Starts the GUI for the game.
+         * @return Nothing.
+         */
+
+        // Grid
+        gridPanel.setPreferredSize(GRID_DIMENSION);
+        gridPanel.setLayout(new GridLayout(ROWS, COLS, 0, 0));
+        // Add life cells to panel
+        for (int row=0; row < ROWS; row++) {
+            for (int col=0; col < COLS; col++) {
+                gridPanel.add(lifeGrid[row][col]);
+            }
+        }
+
+        // Menu
+        menuPanel.setPreferredSize(MENU_DIMENSION);
+        menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
+
+        // Add components
+        gameFrame.add(gridPanel);
+        gameFrame.add(menuPanel);
+
+        // Start frame
+        gameFrame.setSize(GAME_DIMENSION);
+        gameFrame.setResizable(false);
+        gameFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        gameFrame.setVisible(true);
     }
 
     public static void main(String[] args) {
-        final String TITLE = "Test";
-        GameOfLife game = new GameOfLife(TITLE);
-        game.showGame();
-        game.printGrid();
+        GameOfLife newGame = new GameOfLife();
     }
 }
