@@ -1,8 +1,8 @@
 /**
- * MINESWEEPER MOUSE CLASS
+ * GAME OF LIFE MOUSE LISTENER CLASS
  * @author Serena He
  * ----------------------------------------------------------------------------------
- * Implementing the MouseListener class for the Minesweeper game
+ * Implementing the MouseListener class for the Game of Life
  */
 
 import java.awt.event.MouseEvent;
@@ -25,17 +25,20 @@ public class LifeMouseListener implements MouseListener {
         boolean leftPressed = SwingUtilities.isLeftMouseButton(e);
         boolean rightPressed = SwingUtilities.isRightMouseButton(e);
 
-
+        // Click on LifeCell
         if (button.getName() == null && leftPressed && !game.isRunning()) {
             LifeCell cell = (LifeCell) button;
             cell.cellClicked();
         }
+        // Start/Stop
         else if (button.getName() == "start") {
             game.startClicked();
         }
+        // Clear
         else if (button.getName() == "clear" && !game.isRunning()) {
             game.clearGrid();
         }
+        // Blurb
         else if (button.getName() == "blurb") {
             game.blurbClicked();
         }

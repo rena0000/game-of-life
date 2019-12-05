@@ -2,22 +2,17 @@
  * CONWAY'S GAME OF LIFE COPYCAT
  * @author Serena He
  * ----------------------------------------------------------------------------------
- * Main class for GameOfLife-Copycat.
- * Begins a GameOfLife game
+ * Main class for GameOfLife-Copycat. Begins a GameOfLife game
  */
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.lang.management.MemoryNotificationInfo;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
 public class GameOfLife {
-
-    // -----THREADS-----
-    Thread runGame;
 
     // -----GUI-----
     // Dimensions
@@ -65,11 +60,6 @@ public class GameOfLife {
         lifeStage = 0;
         isRunning = false;
 
-        // -----THREADS-----
-        runGame = new Thread("runGame");
-        runGame.setPriority(10);
-        runGame.start();
-
         // -----GRID-----
         lifeGrid = new LifeCell[ROWS][COLS];
         for (int row=0; row < ROWS; row++) {
@@ -103,12 +93,12 @@ public class GameOfLife {
         blurbFrame.add(blurbPanel);
 
         // -----TIMER-----
-        lifeTimer = new Timer(500, new ActionListener() {
+        lifeTimer = new Timer(250, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                setNextLifeStage();
                 lifeStage++;
-                setLifeStageLabel(lifeStage);
-                // TODO: move to next stage
+                setLifeStageLabel();
             }
         });
 
@@ -119,6 +109,10 @@ public class GameOfLife {
     // -----GETTER/SETTERS-----
 
     boolean isRunning() {
+        /**
+         * Return if the game is running through life stages or not.
+         * @return boolean If the game is running or not.
+         */
         return isRunning;
     }
 
@@ -126,7 +120,7 @@ public class GameOfLife {
 
     private void startGame() {
         /**
-         * Starts the GUI for the game.
+         * Starts the GUI for the game. Called only on initial opening of the game.
          * @return Nothing.
          */
 
@@ -171,7 +165,7 @@ public class GameOfLife {
         startStopButton.setBackground(Color.GREEN);
 
         // -----MENU LABELS-----
-        setLifeStageLabel(lifeStage);
+        setLifeStageLabel();
         lifeStageLabel.setPreferredSize(new Dimension(MENU_WIDTH, 20));
         lifeStageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
@@ -203,18 +197,31 @@ public class GameOfLife {
 
     void clearGrid() {
         /**
-         * Set all cells to dead
+         * Set all cells to dead and reset lifeStage.
          * @return Nothing.
          */
         for (int row=0; row < ROWS; row++) {
             for (int col=0; col < COLS; col++) {
-                lifeGrid[row][col].setDead();
+                lifeGrid[row][col].setAlive(false);
+                lifeGrid[row][col].setCellColour();
             }
         }
+        lifeStage = 0;
+        setLifeStageLabel();
+
     }
 
     void startClicked() {
+        /**
+         * Define actions after Start/Stop button is clicked.
+         * If Start is clicked, start the timer and change the button to Stop.
+         * If Stop is clicked, stop the timer and change the button to Start.
+         * @return Nothing.
+         */
         if (!isRunning) {
+            // Clear stages
+            lifeStage = 0;
+            setLifeStageLabel();
             // Start timer
             lifeTimer.start();
             // Change start button to a stop
@@ -232,10 +239,72 @@ public class GameOfLife {
         }
     }
 
+    void setNextLifeStage() {
+        /**
+         * For every cell, determine if they will live or die in the next stage of life.
+         * After setting if they will be alive, move them to the next stage of life.
+         * @return Nothing.
+         */
+        // Determine willBeAlive status for every cell
+        for (int row=0; row < ROWS; row++) {
+            for (int col=0; col < COLS; col++) {
+                int surroundingLives = 0;
+                LifeCell currentCell = lifeGrid[row][col];
+
+                // Check surrounding cells for life
+                for (int i=-1; i < 2; i++) {
+                    for (int j = -1; j < 2; j++) {
+                        int newRow = row + i;
+                        int newCol = col + j;
+                        // Check in range
+                        boolean inRange = (newRow < ROWS) && (newCol < COLS) && (newRow > -1) && (newCol > -1) && (newCol != col || newRow != row);
+                        if (inRange) {
+                            LifeCell surroundingCell = lifeGrid[newRow][newCol];
+                            if (surroundingCell.getIsAlive()) {
+                                surroundingLives++;
+                            }
+                        }
+                    }
+                }
+
+                // Determine life/death
+                if (currentCell.getIsAlive()) { // Cell is alive and well :)
+                    // Die of solitude or overpopulation
+                    if (surroundingLives <= 1 || surroundingLives >= 4) {
+                        currentCell.setWillBeAlive(false);
+                    }
+                    // Continue living
+                    else {
+                        currentCell.setWillBeAlive(true);
+                    }
+                }
+                else { // Cell is dead :(
+                    // Dead cell with 3 neighbours will live
+                    if (surroundingLives == 3) {
+                        currentCell.setWillBeAlive(true);
+                    }
+                    // Continue dead
+                    else {
+                        currentCell.setWillBeAlive(false);
+                    }
+                }
+            }
+        }
+
+        // Update cell using willBeAlive status
+        for (int row=0; row < ROWS; row++) {
+            for (int col = 0; col < COLS; col++) {
+                LifeCell cell = lifeGrid[row][col];
+                cell.moveToNextStage();
+                cell.setCellColour();
+            }
+        }
+    }
+
     // -----MOUSE EVENTS-----
     void blurbClicked() {
         /**
-         * Open blurb window
+         * Open blurb window.
          * @return Nothing.
          */
         blurbFrame.pack();
@@ -244,19 +313,15 @@ public class GameOfLife {
         blurbFrame.setVisible(true);
     }
 
-    void setLifeStageLabel(int stage) {
+    void setLifeStageLabel() {
         /**
-         * Formats and sets the text for the life stage label.
-         * @param stage Current life stage number.
+         * Formats and sets the text for the life stage label using the current lifeStage.
+         * @return Nothing.
          */
-         lifeStageLabel.setText("Stage: " + stage);
+         lifeStageLabel.setText("Stage: " + lifeStage);
     }
 
     public static void main(String[] args) {
-        System.out.println("Game dimension " + GAME_DIMENSION);
-        System.out.println("Grid dimension " + GRID_DIMENSION);
-        System.out.println("Cell dimension " + LifeCell.CELL_DIMENSION);
-
         GameOfLife newGame = new GameOfLife();
     }
 }

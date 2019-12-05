@@ -30,22 +30,72 @@ public class LifeCell extends JButton {
         setBackground(Color.GRAY);
     }
 
-    public void setAlive() {
-        isAlive = true;
-        setBackground(Color.YELLOW);
+    // -----GETTER/SETTERS-----
+
+    public boolean getIsAlive() {
+        /**
+         * Return if the cell is currently alive or not.
+         * @return boolean If the cell is alive.
+         */
+        return isAlive;
     }
 
-    public void setDead() {
-        isAlive = false;
-        setBackground(Color.GRAY);
+    void setAlive(boolean isAlive) {
+        /**
+         * Set the current life status of the cell.
+         * @param isAlive Set the life status to this.
+         * @return Nothing.
+         */
+        this.isAlive = isAlive;
     }
 
-    public void cellClicked() {
+    void setWillBeAlive(boolean willBeAlive) {
+        /**
+         * Set the next stage life status of the cell.
+         * @param willBeAlive Set the next stage life status to this.
+         */
+        this.willBeAlive = willBeAlive;
+    }
+
+    void setCellColour() {
+        /**
+         * Set the cell colour based on the current life status.
+         * @return Nothing.
+         */
         if (isAlive) {
-            setDead();
+            setBackground(Color.YELLOW);
         }
         else {
-            setAlive();
+            setBackground(Color.GRAY);
+        }
+    }
+
+    // -----GAME FUNCTION-----
+
+    public void moveToNextStage() {
+        /**
+         * Move to the next stage by setting the current life status to the next stage life status.
+         * Reset the next stage life status to false.
+         * @return Nothing.
+         */
+        isAlive = willBeAlive;
+        willBeAlive = false;
+    }
+
+    // -----MOUSE ACTION-----
+
+    public void cellClicked() {
+        /**
+         * Set the cell life status based on user input.
+         * @return Nothing.
+         */
+        if (isAlive) {
+            setAlive(false);
+            setCellColour();
+        }
+        else {
+            setAlive(true);
+            setCellColour();
         }
     }
 
