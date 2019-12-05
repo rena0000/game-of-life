@@ -25,14 +25,15 @@ public class LifeMouseListener implements MouseListener {
         boolean leftPressed = SwingUtilities.isLeftMouseButton(e);
         boolean rightPressed = SwingUtilities.isRightMouseButton(e);
 
-        if (button.getName() == null && leftPressed) {
+
+        if (button.getName() == null && leftPressed && !game.isRunning()) {
             LifeCell cell = (LifeCell) button;
             cell.cellClicked();
         }
         else if (button.getName() == "start") {
-            // TODO: Start button clicked
+            game.startClicked();
         }
-        else if (button.getName() == "clear") {
+        else if (button.getName() == "clear" && !game.isRunning()) {
             game.clearGrid();
         }
         else if (button.getName() == "blurb") {

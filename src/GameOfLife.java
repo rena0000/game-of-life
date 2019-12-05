@@ -7,11 +7,17 @@
  */
 
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.lang.management.MemoryNotificationInfo;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
 public class GameOfLife {
+
+    // -----THREADS-----
+    Thread runGame;
 
     // -----GUI-----
     // Dimensions
@@ -36,17 +42,33 @@ public class GameOfLife {
     private JButton clearButton = new JButton();
     private JButton blurbButton = new JButton();
     // Labels
-    private JLabel blurbLabel = new JLabel();
+    private JLabel lifeStageLabel = new JLabel();
+    // Editor pane
+    private JEditorPane blurbText = new JEditorPane();
+    private static final java.net.URL blurbURL = GameOfLife.class.getResource("blurb.html");
 
     // -----GAME-----
     static final int ROWS = 50;
     static final int COLS = 50;
     LifeCell[][] lifeGrid;
+    // Timing
+    private int lifeStage;
+    private Timer lifeTimer;
+    // Status
+    private boolean isRunning;
 
     public GameOfLife() {
         /**
          * Constructor for a new Game of Life
          */
+        // Status
+        lifeStage = 0;
+        isRunning = false;
+
+        // -----THREADS-----
+        runGame = new Thread("runGame");
+        runGame.setPriority(10);
+        runGame.start();
 
         // -----GRID-----
         lifeGrid = new LifeCell[ROWS][COLS];
@@ -63,15 +85,44 @@ public class GameOfLife {
         blurbButton.addMouseListener(new LifeMouseListener(this));
 
         // -----BLURB-----
-        blurbFrame.setSize(100, 200);
-        blurbPanel.setSize(100, 200);
-        blurbLabel.setText("Testing\nTesting");
-        blurbPanel.add(blurbLabel);
+        // Set blurb editor pane
+        blurbText.setEditable(false);
+        if (blurbURL != null) {
+            try {
+                blurbText.setPage(blurbURL);
+            }
+            catch (IOException e) {
+                System.err.println("Bad blurb URL: " + blurbURL);
+            }
+        }
+        else {
+            System.err.println("Blurb URL cannot be found");
+        }
+
+        blurbPanel.add(blurbText);
         blurbFrame.add(blurbPanel);
+
+        // -----TIMER-----
+        lifeTimer = new Timer(500, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                lifeStage++;
+                setLifeStageLabel(lifeStage);
+                // TODO: move to next stage
+            }
+        });
 
         // Start
         startGame();
     }
+
+    // -----GETTER/SETTERS-----
+
+    boolean isRunning() {
+        return isRunning;
+    }
+
+    // -----GAME START/STOP-----
 
     private void startGame() {
         /**
@@ -90,36 +141,50 @@ public class GameOfLife {
             }
         }
 
-        // -----MENU-----
+        // -----MENU PANEL-----
         // Panel
         menuPanel.setSize(MENU_DIMENSION);
         menuPanel.setBackground(Color.WHITE);
         menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
         menuPanel.setBorder(new EmptyBorder(new Insets(50, 10, 50, 10)));
         menuPanel.setAlignmentX(Component.RIGHT_ALIGNMENT);
-        // Button name
+
+        // -----MENU BUTTONS-----
+        // Name
         startStopButton.setName("start");
         clearButton.setName("clear");
         blurbButton.setName("blurb");
-        // Button text
+        // Text
         startStopButton.setText("Start");
         clearButton.setText("Clear");
         blurbButton.setText("Blurb");
-        // Button size
+        // Size
         startStopButton.setSize(MENU_WIDTH, 20);
         clearButton.setSize(MENU_WIDTH, 20);
         blurbButton.setSize(MENU_WIDTH, 20);
-        // Button alignment
+        // Alignment
         startStopButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         clearButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         blurbButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         blurbButton.setAlignmentY(Component.BOTTOM_ALIGNMENT );
+        // Colour
+        startStopButton.setBackground(Color.GREEN);
+
+        // -----MENU LABELS-----
+        setLifeStageLabel(lifeStage);
+        lifeStageLabel.setPreferredSize(new Dimension(MENU_WIDTH, 20));
+        lifeStageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // -----COMPOSE MENU-----
         // Add buttons to panel
+        menuPanel.add(lifeStageLabel);
+        menuPanel.add(Box.createRigidArea(new Dimension(MENU_WIDTH,10 )));
         menuPanel.add(startStopButton);
         menuPanel.add(Box.createRigidArea(new Dimension(MENU_WIDTH, 10)));
         menuPanel.add(clearButton);
         menuPanel.add(Box.createRigidArea(new Dimension(MENU_WIDTH, 50)));
         menuPanel.add(blurbButton);
+
 
         // -----FINAL PANEL-----
         finalPanel.add(gridPanel);
@@ -148,6 +213,26 @@ public class GameOfLife {
         }
     }
 
+    void startClicked() {
+        if (!isRunning) {
+            // Start timer
+            lifeTimer.start();
+            // Change start button to a stop
+            isRunning = true;
+            startStopButton.setText("Stop");
+            startStopButton.setBackground(Color.RED);
+        }
+        else {
+            // Stop timer
+            lifeTimer.stop();
+            // Change stop button to a start
+            isRunning = false;
+            startStopButton.setText("Start");
+            startStopButton.setBackground(Color.GREEN);
+        }
+    }
+
+    // -----MOUSE EVENTS-----
     void blurbClicked() {
         /**
          * Open blurb window
@@ -157,6 +242,14 @@ public class GameOfLife {
         blurbFrame.setResizable(false);
         blurbFrame.setLocationRelativeTo(null);
         blurbFrame.setVisible(true);
+    }
+
+    void setLifeStageLabel(int stage) {
+        /**
+         * Formats and sets the text for the life stage label.
+         * @param stage Current life stage number.
+         */
+         lifeStageLabel.setText("Stage: " + stage);
     }
 
     public static void main(String[] args) {
