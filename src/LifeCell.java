@@ -17,14 +17,17 @@ public class LifeCell extends JButton {
     // -----ATTRIBUTES-----
     private boolean isAlive;
     private boolean willBeAlive;
+    // Game
+    GameOfLife game;
 
-    LifeCell() {
+    LifeCell(GameOfLife game) {
         /** CONSTRUCTOR
          *  Construct a new LifeCell
          */
         // Attributes
         isAlive = false;
         willBeAlive = false;
+        this.game = game;
         // GUI
         setSize(CELL_DIMENSION);
         setBackground(Color.GRAY);
@@ -89,13 +92,21 @@ public class LifeCell extends JButton {
          * Set the cell life status based on user input.
          * @return Nothing.
          */
+        // Grid is changing ,reset stages to zero
+        if (game.getLifeStage() != 0) {
+            game.resetLifeStage();
+        }
+        // Set cell to dead
         if (isAlive) {
             setAlive(false);
             setCellColour();
+            game.decrementPopCount();
         }
+        // Set cell to alive
         else {
             setAlive(true);
             setCellColour();
+            game.incrementPopCount();
         }
     }
 

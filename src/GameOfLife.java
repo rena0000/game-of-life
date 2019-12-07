@@ -2,7 +2,7 @@
  * CONWAY'S GAME OF LIFE COPYCAT
  * @author Serena He
  * ----------------------------------------------------------------------------------
- * Main class for GameOfLife-Copycat. Begins a GameOfLife game
+ * Main class for the Game of Life, begins a new game
  */
 
 import java.awt.*;
@@ -16,10 +16,10 @@ public class GameOfLife {
 
     // -----GUI-----
     // Dimensions
-    static final int GAME_WIDTH = 800;
-    static final int GAME_HEIGHT = 700; // 10:9 ratio
-    static final int GRID_WIDTH = 650;
-    static final int MENU_WIDTH = 100;
+    static final int GAME_WIDTH = 1000;
+    static final int GAME_HEIGHT = 800;
+    static final int GRID_WIDTH = 700;
+    static final int MENU_WIDTH = 150;
 
     static final Dimension GAME_DIMENSION = new Dimension(GAME_WIDTH, GAME_HEIGHT);
     static final Dimension GRID_DIMENSION = new Dimension(GRID_WIDTH, GRID_WIDTH);
@@ -38,9 +38,15 @@ public class GameOfLife {
     private JButton blurbButton = new JButton();
     // Labels
     private JLabel lifeStageLabel = new JLabel();
+    private JLabel popCountLabel = new JLabel();
     // Editor pane
     private JEditorPane blurbText = new JEditorPane();
     private static final java.net.URL blurbURL = GameOfLife.class.getResource("blurb.html");
+    // Slider
+    private JSlider speedSlider;
+    private static final int SPEED_MIN = 0;
+    private static final int SPEED_MAX = 100;
+    private static final int SPEED_INIT = 50;
 
     // -----GAME-----
     static final int ROWS = 50;
@@ -51,6 +57,7 @@ public class GameOfLife {
     private Timer lifeTimer;
     // Status
     private boolean isRunning;
+    private int popCount;
 
     public GameOfLife() {
         /**
@@ -58,13 +65,14 @@ public class GameOfLife {
          */
         // Status
         lifeStage = 0;
+        popCount = 0;
         isRunning = false;
 
         // -----GRID-----
         lifeGrid = new LifeCell[ROWS][COLS];
         for (int row=0; row < ROWS; row++) {
             for (int col=0; col < COLS; col++) {
-                LifeCell cell = new LifeCell();
+                LifeCell cell = new LifeCell(this);
                 lifeGrid[row][col] = cell;
                 cell.addMouseListener(new LifeMouseListener(this));
             }
@@ -93,12 +101,14 @@ public class GameOfLife {
         blurbFrame.add(blurbPanel);
 
         // -----TIMER-----
-        lifeTimer = new Timer(250, new ActionListener() {
+        lifeTimer = new Timer(270, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 setNextLifeStage();
                 lifeStage++;
                 setLifeStageLabel();
+                setPopCountLabel();
+
             }
         });
 
@@ -114,6 +124,51 @@ public class GameOfLife {
          * @return boolean If the game is running or not.
          */
         return isRunning;
+    }
+
+    void incrementPopCount() {
+        /**
+         * Increment the population counter by 1.
+         * @return Nothing.
+         */
+        popCount++;
+        setPopCountLabel();
+    }
+
+    void decrementPopCount() {
+        /**
+         * Decrement the population counter by 1.
+         * @return Nothing.
+         */
+        popCount--;
+        setPopCountLabel();
+    }
+
+    int getLifeStage() {
+        /**
+         * Return the current stage of life.
+         * @return int Current stage of life.
+         */
+        return lifeStage;
+    }
+
+    void resetLifeStage() {
+        /**
+         * Reset the life stage to zero.
+         * @return Nothing.
+         */
+        lifeStage = 0;
+        setLifeStageLabel();
+    }
+
+    void setLifeTimerDelay(int sliderValue) {
+        /**
+         * Set a new delay for the timer based on the speed slider.
+         * Min - 40 ms, Max - 500s ms
+         * @return Nothing.
+         */
+        int newDelay = (int)(-4.6*sliderValue + 500);
+        lifeTimer.setDelay(newDelay);
     }
 
     // -----GAME START/STOP-----
@@ -165,20 +220,40 @@ public class GameOfLife {
         startStopButton.setBackground(Color.GREEN);
 
         // -----MENU LABELS-----
+        // Stages
         setLifeStageLabel();
         lifeStageLabel.setPreferredSize(new Dimension(MENU_WIDTH, 20));
         lifeStageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // Population count
+        setPopCountLabel();
+        popCountLabel.setPreferredSize(new Dimension(MENU_WIDTH, 20));
+        popCountLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // -----SLIDER-----
+        speedSlider = new JSlider(JSlider.HORIZONTAL, SPEED_MIN, SPEED_MAX, SPEED_INIT);
+        speedSlider.addChangeListener(new SpeedSliderListener(this));
+        speedSlider.setSize(new Dimension(MENU_WIDTH, 30));
+        speedSlider.setBackground(Color.WHITE);
+        // Ticks
+        speedSlider.setMajorTickSpacing(20);
+        speedSlider.setMinorTickSpacing(10);
+        speedSlider.setPaintTicks(true);
+        speedSlider.setPaintLabels(true);
 
         // -----COMPOSE MENU-----
         // Add buttons to panel
+        menuPanel.add(Box.createRigidArea(new Dimension(MENU_WIDTH, 180 )));
         menuPanel.add(lifeStageLabel);
         menuPanel.add(Box.createRigidArea(new Dimension(MENU_WIDTH,10 )));
+        menuPanel.add(popCountLabel);
+        menuPanel.add(Box.createRigidArea(new Dimension(MENU_WIDTH, 10 )));
         menuPanel.add(startStopButton);
         menuPanel.add(Box.createRigidArea(new Dimension(MENU_WIDTH, 10)));
         menuPanel.add(clearButton);
-        menuPanel.add(Box.createRigidArea(new Dimension(MENU_WIDTH, 50)));
+        menuPanel.add(Box.createRigidArea(new Dimension(MENU_WIDTH, 40)));
+        menuPanel.add(speedSlider);
+        menuPanel.add(Box.createRigidArea(new Dimension(MENU_WIDTH, 200)));
         menuPanel.add(blurbButton);
-
 
         // -----FINAL PANEL-----
         finalPanel.add(gridPanel);
@@ -208,7 +283,8 @@ public class GameOfLife {
         }
         lifeStage = 0;
         setLifeStageLabel();
-
+        popCount = 0;
+        setPopCountLabel();
     }
 
     void startClicked() {
@@ -218,10 +294,8 @@ public class GameOfLife {
          * If Stop is clicked, stop the timer and change the button to Start.
          * @return Nothing.
          */
+        // Start
         if (!isRunning) {
-            // Clear stages
-            lifeStage = 0;
-            setLifeStageLabel();
             // Start timer
             lifeTimer.start();
             // Change start button to a stop
@@ -229,8 +303,8 @@ public class GameOfLife {
             startStopButton.setText("Stop");
             startStopButton.setBackground(Color.RED);
         }
+        // Stop
         else {
-            // Stop timer
             lifeTimer.stop();
             // Change stop button to a start
             isRunning = false;
@@ -269,21 +343,23 @@ public class GameOfLife {
 
                 // Determine life/death
                 if (currentCell.getIsAlive()) { // Cell is alive and well :)
-                    // Die of solitude or overpopulation
+                    // Alive --> Dead
                     if (surroundingLives <= 1 || surroundingLives >= 4) {
                         currentCell.setWillBeAlive(false);
+                        popCount--;
                     }
-                    // Continue living
+                    // Alive --> Alive
                     else {
                         currentCell.setWillBeAlive(true);
                     }
                 }
                 else { // Cell is dead :(
-                    // Dead cell with 3 neighbours will live
+                    // Dead --> Alive
                     if (surroundingLives == 3) {
                         currentCell.setWillBeAlive(true);
+                        popCount++;
                     }
-                    // Continue dead
+                    // Dead --> Dead
                     else {
                         currentCell.setWillBeAlive(false);
                     }
@@ -319,6 +395,14 @@ public class GameOfLife {
          * @return Nothing.
          */
          lifeStageLabel.setText("Stage: " + lifeStage);
+    }
+
+    void setPopCountLabel() {
+        /**
+         * Formats and sets the text for the population count label from the popCount.
+         * @return Nothing.
+         */
+        popCountLabel.setText("Population: " + popCount);
     }
 
     public static void main(String[] args) {
