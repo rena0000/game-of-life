@@ -14,6 +14,10 @@ The *Game of Life* is a cellular automation based on a grid of cells that are ei
 |Dead|3|Alive|
 |Dead|< 3 or > 3|Dead|
 
+## Preview
+<img src="images/start.PNG" alt="start screen"  width=750)/>
+<img src="images/running.PNG" alt="running screen" width=750)/>
+
 ## Release
 A `.jar` file can be found in `out/`.
 Developed using JDK 13.0.1, not tested on other JDK versions.
